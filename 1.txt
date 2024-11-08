@@ -1,0 +1,37 @@
+# Import necessary libraries
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense
+from tensorflow.keras.optimizers import SGD
+from tensorflow.keras.datasets import mnist
+import matplotlib.pyplot as plt
+
+# Load and preprocess the MNIST data
+(X_train, Y_train), (X_test, Y_test) = mnist.load_data()
+X_train = X_train.reshape(-1, 28*28) / 255.0  # Flatten and normalize
+X_test = X_test.reshape(-1, 28*28) / 255.0  # Flatten and normalize
+Y_train = Y_train
+Y_test = Y_test
+
+# Build the model
+model = Sequential([
+    Dense(128, input_shape=(784,), activation='relu'),
+    Dense(64, activation='relu'),
+    Dense(10, activation='softmax')
+])
+
+# Compile the model
+model.compile(optimizer=SGD(0.02), loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+
+# Train the model
+history = model.fit(X_train, Y_train, validation_data=(X_test, Y_test), epochs=20)
+
+# Plot loss and accuracy
+plt.plot(history.history['loss'], label='Train Loss')
+plt.plot(history.history['val_loss'], label='Val Loss')
+plt.plot(history.history['accuracy'], label='Train Accuracy')
+plt.plot(history.history['val_accuracy'], label='Val Accuracy')
+plt.title('Loss and Accuracy over Epochs')
+plt.xlabel('Epochs')
+plt.ylabel('Loss/Accuracy')
+plt.legend()
+plt.show()

@@ -1,0 +1,58 @@
+from tensorflow.keras.preprocessing.text import Tokenizer
+from tensorflow.keras.utils import to_categorical
+import numpy as np
+import string
+
+# Sample data with punctuation removed
+data = "Deep learning is part of machine learning."
+data = data.lower().translate(str.maketrans('', '', string.punctuation))  # Remove punctuation
+
+# Initialize tokenizer and fit on the text
+tokenizer = Tokenizer()
+tokenizer.fit_on_texts([data])
+
+# Create word index (mapping of words to integers)
+word_index = tokenizer.word_index
+
+# Print the word index
+print("Word Index:", word_index)
+
+# Create context-target pairs (CBOW)
+context_words = []
+target_words = []
+words = data.split()  # No punctuation now
+
+# Define context window (2 words on each side of target word)
+context_window = 2
+
+for i in range(context_window, len(words) - context_window):
+    # Get context words (skip the target word itself)
+    context = [word_index[words[j]] for j in range(i - context_window, i + context_window + 1) if j != i]
+    target = word_index[words[i]]
+    
+    context_words.append(context)
+    target_words.append(target)
+
+context_words = np.array(context_words)
+target_words = to_categorical(np.array(target_words), num_classes=len(word_index) + 1)
+
+# Build the CBOW model
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Embedding, Dense, Flatten
+
+model = Sequential([
+    Embedding(input_dim=len(word_index) + 1, output_dim=10, input_length=len(context_words[0])),  # Length of context
+    Flatten(),
+    Dense(len(word_index) + 1, activation='softmax')  # Number of words in the vocabulary
+])
+
+# Compile the model
+model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+
+# Train the model
+history = model.fit(context_words, target_words, epochs=10, batch_size=1)
+
+# Print training loss and accuracy for each epoch
+print("\nTraining History:")
+for epoch, (loss, accuracy) in enumerate(zip(history.history['loss'], history.history['accuracy']), 1):
+    print(f"Epoch {epoch}: Loss = {loss:.4f}, Accuracy = {accuracy:.4f}")
